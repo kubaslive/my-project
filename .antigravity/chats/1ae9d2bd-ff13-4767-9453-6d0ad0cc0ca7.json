@@ -3,6 +3,43 @@
   "name": "Stworzymy razem aplikację?",
   "createdAt": "2026-10-30T20:33:52.698Z",
   "filename": "1ae9d2bd-ff13-4767-9453-6d0ad0cc0ca7.json",
-  "geminiStarted": false,
-  "messages": []
+  "geminiStarted": true,
+  "messages": [
+    {
+      "id": "2f8f2a24-5a8d-4385-a2d1-58e73a77f4ff",
+      "role": "user",
+      "content": "Odpisuj po polsku",
+      "status": "pending",
+      "model": "gemini-3.8-flash-high",
+      "client_type": "gemini-bridge",
+      "parent_message_id": null,
+      "created_at": "2026-10-30T20:34:38.338Z",
+      "sender": "ios",
+      "is_cancelled": false
+    },
+    {
+      "id": "f3045cc2-ca05-4f36-8854-facf2683af2f",
+      "role": "agent",
+      "content": "Oczywiście! Od teraz będę odpowiadać po polsku. W czym mogę Ci dzisiaj pomóc przy Twoim projekcie?",
+      "status": "completed",
+      "model": "gemini-3.8-flash-high",
+      "client_type": "gemini-bridge",
+      "parent_message_id": "2f8f2a24-5a8d-4385-a2d1-58e73a77f4ff",
+      "created_at": "2026-10-30T20:34:45.390Z",
+      "sender": "macOS",
+      "is_cancelled": false
+    },
+    {
+      "id": "86659f56-0109-40a8-99a3-169aac38e0b1",
+      "role": "user",
+      "content": "Chcę stworzyćaplikacje na wzór swd PRMarchitektura czyli aplikacja pobierana na Windows android oraz iOS na tablety i wszystko działa komunikacja w jednej sieci zabezpieczonej więc najpierw architektura",
+      "status": "pending",
+      "model": "gemini-3.8-flash-high",
+      "client_type": "gemini-bridge",
+      "parent_message_id": null,
+      "created_at": "2026-10-30T20:36:28.800Z",
+      "sender": "ios",
+      "is_cancelled": false
+    }
+  ]
 }
