@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SWD PRM Core - Konsola Testowa</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --status1: #3b82f6; /* Wyjazd */
+      --status2: #8b5cf6; /* Na miejscu */
+      --status3: #ec4899; /* Przejęcie */
+      --status4: #f97316; /* Transport */
+      --status5: #eab308; /* Szpital */
+      --status6: #10b981; /* Gotowość */
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 16px; min-height: 100vh; }
+
+    header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--card-border); margin-bottom: 20px; }
+    .badge { padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+    .badge-online { background: rgba(34, 197, 94, 0.2); color: var(--success); border: 1px solid var(--success); }
+    .badge-offline { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+    .panel { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
+    .panel h2 { font-size: 18px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 10px; }
+
+    /* Form styles */
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; font-weight: 600; }
+    input, select, textarea { width: 100%; padding: 10px 12px; background: #0b1120; border: 1px solid var(--card-border); border-radius: 6px; color: var(--text); font-size: 14px; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); ring: 2px var(--primary); }
+    button { cursor: pointer; padding: 10px 16px; font-weight: 600; border-radius: 6px; border: none; transition: all 0.15s ease; }
+    .btn-primary { background: var(--primary); color: white; width: 100%; font-size: 15px; }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    /* ZRM Units Cards */
+    .units-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .unit-card { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: #0b1120; border: 1px solid var(--card-border); border-radius: 8px; }
+    .unit-info h4 { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+    .unit-info span { font-size: 12px; color: var(--text-muted); }
+    .status-tag { padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 13px; letter-spacing: 0.5px; }
+
+    /* Status buttons for Tablet */
+    .status-buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+    .btn-status { height: 60px; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 2px solid transparent; color: white; text-transform: uppercase; }
+    .btn-status:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-st-1 { background: #1d4ed8; }
+    .btn-st-2 { background: #6d28d9; }
+    .btn-st-3 { background: #be185d; }
+    .btn-st-4 { background: #c2410c; }
+    .btn-st-5 { background: #a16207; }
+    .btn-st-6 { background: #047857; }
+    .btn-status.active { border-color: white; box-shadow: 0 0 15px rgba(255,255,255,0.4); }
+
+    /* Dispatches List */
+    .dispatches-box { max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .dispatch-item { padding: 12px; background: #0b1120; border-left: 4px solid var(--primary); border-radius: 6px; font-size: 13px; }
+    .dispatch-item.urgent { border-left-color: var(--danger); }
+    .dispatch-header { display: flex; justify-content: space-between; margin-bottom: 4px; font-weight: 700; }
+
+    /* Log Box */
+    .log-box { margin-top: 20px; background: #050814; border: 1px solid var(--card-border); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 12px; height: 130px; overflow-y: auto; color: #a5b4fc; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <h1 style="font-size: 22px;">🚑 SWD PRM Core Engine</h1>
+      <p style="font-size: 13px; color: var(--text-muted);">Zabezpieczona Sieć Lokalna • Węzeł Dyspozytorski i Terminal Mobilny</p>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <span id="wsStatus" class="badge badge-offline">Rozłączono</span>
+      <span style="font-size: 13px; color: var(--text-muted);" id="liveClock">--:--:--</span>
+    </div>
+  </header>
+
+  <main class="grid">
+    <!-- PANEL 1: Stanowisko Dyspozytora -->
+    <section class="panel">
+      <h2>
+        <span>🖥️ Stanowisko Dyspozytora (Windows)</span>
+        <span class="badge" style="background:#2563eb;">DYSPOZYTORNIA</span>
+      </h2>
+
+      <!-- Nowe KZW -->
+      <form id="dispatchForm" onsubmit="event.preventDefault(); submitDispatch();" style="margin-bottom: 24px; padding: 14px; background: #0b1120; border-radius: 8px; border: 1px solid var(--card-border);">
+        <h3 style="font-size: 14px; margin-bottom: 10px; color: #60a5fa;">➕ Nowe Zlecenie Wyjazdu (KZW)</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label>Priorytet wyjazdu</label>
+            <select id="priority">
+              <option value="KOD_1">KOD 1 (Uprzywilejowany 🚨)</option>
+              <option value="KOD_2">KOD 2 (Zwykły)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Przydziel zespół ZRM</label>
+            <select id="assignUnit">
+              <option value="ZRM-01">W01-01 (Podstawowy P)</option>
+              <option value="ZRM-02">W01-02 (Specjalistyczny S)</option>
+              <option value="ZRM-03">M01-01 (Motoambulans M)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Powód wezwania / Główny objaw</label>
+          <input type="text" id="chiefComplaint" placeholder="np. Silny ból w klatce piersiowej, utrata przytomności" required />
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label>Adres zdarzenia</label>
+            <input type="text" id="incidentAddress" placeholder="np. ul. Marszałkowska 10/12 m. 4" required />
+          </div>
+          <div class="form-group">
+            <label>Miasto</label>
+            <input type="text" id="incidentCity" value="Warszawa" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Dane pacjenta i wywiad dyspozytora</label>
+          <input type="text" id="patientInfo" placeholder="Jan Kowalski, ok. 65 lat, leczy się kardiologicznie" />
+        </div>
+
+        <button type="submit" class="btn-primary">🚨 Zadysponuj Zespół (Wyślij KZW)</button>
+      </form>
+
+      <!-- Statusy Zespołów -->
+      <h3 style="font-size: 14px; margin-bottom: 10px; color: var(--text-muted);">MONITOR ZESPOŁÓW ZRM:</h3>
+      <div id="unitsContainer" class="units-list">
+        <!-- Renderowane dynamicznie -->
+      </div>
+
+      <!-- Aktywne Zgłoszenia -->
+      <h3 style="font-size: 14px; margin-bottom: 10px; color: var(--text-muted);">LISTA ZLECEŃ WYJAZDU:</h3>
+      <div id="dispatchesContainer" class="dispatches-box">
+        <div style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px;">Brak aktywnych zleceń wyjazdu</div>
+      </div>
+    </section>
+
+    <!-- PANEL 2: Terminal Mobilny ZRM -->
+    <section class="panel">
+      <h2>
+        <span>📱 Terminal Mobilny ZRM (Android / iOS Tablet)</span>
+        <select id="activeTabletSelect" onchange="changeActiveTablet(this.value)" style="width: auto; padding: 4px 8px; font-size: 13px;">
+          <option value="ZRM-01">Karetka W01-01 (P)</option>
+          <option value="ZRM-02">Karetka W01-02 (S)</option>
+          <option value="ZRM-03">Motoambulans M01-01 (M)</option>
+        </select>
+      </h2>
+
+      <!-- Aktywne Zlecenie na Tablecie -->
+      <div id="tabletDispatchCard" style="background: #0b1120; border: 1px dashed var(--card-border); border-radius: 8px; padding: 14px; margin-bottom: 20px;">
+        <h4 style="color: #38bdf8; font-size: 14px; margin-bottom: 6px;">📥 AKTYWNE ZLECENIE (KZW):</h4>
+        <div id="tabletDispatchContent" style="font-size: 13px; color: var(--text-muted);">
+          Brak przypisanego zlecenia. Zespół w gotowości operacyjnej.
+        </div>
+      </div>
+
+      <!-- Klawisze Statusów 1-6 -->
+      <h4 style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">STATUSY OPERACYJNE (SWD PRM):</h4>
+      <div class="status-buttons">
+        <button id="btnSt1" class="btn-status btn-st-1" onclick="sendTabletStatus(1)">1 • Wyjazd</button>
+        <button id="btnSt2" class="btn-status btn-st-2" onclick="sendTabletStatus(2)">2 • Na miejscu</button>
+        <button id="btnSt3" class="btn-status btn-st-3" onclick="sendTabletStatus(3)">3 • Przejęcie</button>
+        <button id="btnSt4" class="btn-status btn-st-4" onclick="sendTabletStatus(4)">4 • Transport</button>
+        <button id="btnSt5" class="btn-status btn-st-5" onclick="sendTabletStatus(5)">5 • Szpital</button>
+        <button id="btnSt6" class="btn-status btn-st-6 active" onclick="sendTabletStatus(6)">6 • Gotowość</button>
+      </div>
+
+      <!-- Szybki Formularz Medyczny KMCR -->
+      <div style="background: #0b1120; border-radius: 8px; padding: 14px; border: 1px solid var(--card-border);">
+        <h4 style="color: #a78bfa; font-size: 14px; margin-bottom: 10px;">🩺 Szybki wpis parametrów KMCR (Tablet):</h4>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px;">
+          <div>
+            <label>HR (tętno)</label>
+            <input type="number" id="vHR" placeholder="85" value="82" />
+          </div>
+          <div>
+            <label>RR (ciśnienie)</label>
+            <input type="text" id="vBP" placeholder="120/80" value="130/85" />
+          </div>
+          <div>
+            <label>SpO2 (%)</label>
+            <input type="number" id="vSpO2" placeholder="98" value="97" />
+          </div>
+          <div>
+            <label>GCS (3-15)</label>
+            <input type="number" id="vGCS" placeholder="15" value="15" min="3" max="15" />
+          </div>
+        </div>
+        <button type="button" class="btn-primary" style="background:#7c3aed;" onclick="saveTabletKMCR()">💾 Synchronizuj parametry KMCR z serwerem</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="log-box" id="logBox">
+    <div>[INIT] System SWD PRM gotowy. Oczekiwanie na połączenie WebSocket...</div>
+  </div>
+
+  <script>
+    let ws = null;
+    let currentUnitID = "ZRM-01";
+    let unitsData = {};
+    let activeDispatches = {};
+
+    const statusNames = {
+      1: "1: Wyjazd",
+      2: "2: Na miejscu",
+      3: "3: Przejęcie pacjenta",
+      4: "4: Transport",
+      5: "5: W szpitalu",
+      6: "6: Gotowość"
+    };
+
+    const statusColors = {
+      1: "#1d4ed8",
+      2: "#6d28d9",
+      3: "#be185d",
+      4: "#c2410c",
+      5: "#a16207",
+      6: "#047857"
+    };
+
+    function log(msg) {
+      const box = document.getElementById("logBox");
+      const d = new Date().toLocaleTimeString();
+      const div = document.createElement("div");
+      div.textContent = `[${d}] ${msg}`;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function initWebSocket() {
+      const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+      const wsUrl = `${protocol}//${location.host}/ws?role=DISPATCHER&id=DYSPO-WEB`;
+      
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        document.getElementById("wsStatus").textContent = "Połączono (mTLS / LAN)";
+        document.getElementById("wsStatus").className = "badge badge-online";
+        log("Nawiązano bezpieczne połączenie WebSocket z węzłem serwerowym.");
+        loadInitialData();
+      };
+
+      ws.onclose = () => {
+        document.getElementById("wsStatus").textContent = "Rozłączono";
+        document.getElementById("wsStatus").className = "badge badge-offline";
+        log("Utracono połączenie. Ponowna próba za 3 sekundy...");
+        setTimeout(initWebSocket, 3000);
+      };
+
+      ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        handleWSMessage(msg);
+      };
+    }
+
+    function handleWSMessage(msg) {
+      log(`Odebrano komunikat: ${msg.type} od ${msg.sender_id || msg.sender_role}`);
+      
+      if (msg.type === "STATUS_UPDATE") {
+        const unit = msg.payload.unit;
+        if (unit) {
+          unitsData[unit.id] = unit;
+          renderUnits();
+          if (unit.id === currentUnitID) {
+            highlightStatusButton(unit.current_status);
+          }
+        }
+      } else if (msg.type === "DISPATCH_NEW") {
+        const dispatch = msg.payload;
+        activeDispatches[dispatch.id] = dispatch;
+        renderDispatches();
+        if (dispatch.assigned_unit_id === currentUnitID) {
+          renderTabletDispatch(dispatch);
+        }
+      } else if (msg.type === "UNITS_LIST") {
+        msg.payload.forEach(u => unitsData[u.id] = u);
+        renderUnits();
+      } else if (msg.type === "KMCR_UPDATE") {
+        log(`Karta KMCR dla zlecenia ${msg.payload.dispatch_id} została zsynchronizowana.`);
+      }
+    }
+
+    async function loadInitialData() {
+      try {
+        const [resUnits, resDispatches] = await Promise.all([
+          fetch("/api/v1/units"),
+          fetch("/api/v1/dispatches")
+        ]);
+        const units = await resUnits.json();
+        const dispatches = await resDispatches.json();
+
+        units.forEach(u => unitsData[u.id] = u);
+        dispatches.forEach(d => activeDispatches[d.id] = d);
+
+        renderUnits();
+        renderDispatches();
+        updateTabletView();
+      } catch (err) {
+        log(`Błąd ładowania danych początkowych: ${err}`);
+      }
+    }
+
+    function renderUnits() {
+      const container = document.getElementById("unitsContainer");
+      container.innerHTML = "";
+      Object.values(unitsData).forEach(u => {
+        const div = document.createElement("div");
+        div.className = "unit-card";
+        const stColor = statusColors[u.current_status] || "#475569";
+        const stName = statusNames[u.current_status] || "Nieznany";
+        
+        div.innerHTML = `
+          <div class="unit-info">
+            <h4>${u.callsign} (${u.type === "P" ? "Podstawowy" : u.type === "S" ? "Specjalistyczny" : "Moto"})</h4>
+            <span>${u.base_station} • GPS: ${u.latitude.toFixed(4)}, ${u.longitude.toFixed(4)}</span>
+          </div>
+          <div class="status-tag" style="background: ${stColor}; color: white;">
+            ${stName}
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function renderDispatches() {
+      const container = document.getElementById("dispatchesContainer");
+      const list = Object.values(activeDispatches);
+      if (list.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px;">Brak aktywnych zleceń wyjazdu</div>';
+        return;
+      }
+      container.innerHTML = "";
+      list.reverse().forEach(d => {
+        const div = document.createElement("div");
+        div.className = `dispatch-item ${d.priority === "KOD_1" ? "urgent" : ""}`;
+        div.innerHTML = `
+          <div class="dispatch-header">
+            <span>[${d.priority}] ${d.id} ➔ ${d.assigned_unit_id}</span>
+            <span style="color: #60a5fa;">${d.status}</span>
+          </div>
+          <div style="font-weight: 600; margin-bottom: 2px;">${d.chief_complaint}</div>
+          <div style="color: var(--text-muted);">${d.incident_address}, ${d.incident_city} ${d.patient_name ? "• Pacjent: " + d.patient_name : ""}</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function changeActiveTablet(unitID) {
+      currentUnitID = unitID;
+      log(`Przełączono aktywny symulator tabletu na: ${unitID}`);
+      updateTabletView();
+    }
+
+    function updateTabletView() {
+      const unit = unitsData[currentUnitID];
+      if (unit) {
+        highlightStatusButton(unit.current_status);
+        if (unit.current_dispatch_id && activeDispatches[unit.current_dispatch_id]) {
+          renderTabletDispatch(activeDispatches[unit.current_dispatch_id]);
+        } else {
+          document.getElementById("tabletDispatchContent").innerHTML = "Brak przypisanego zlecenia. Zespół w gotowości operacyjnej.";
+        }
+      }
+    }
+
+    function renderTabletDispatch(d) {
+      document.getElementById("tabletDispatchContent").innerHTML = `
+        <div style="font-size: 15px; font-weight: 800; color: ${d.priority === 'KOD_1' ? '#ef4444' : '#60a5fa'}; margin-bottom: 4px;">
+          ${d.priority === 'KOD_1' ? '🚨 PILNY KOD 1' : 'ℹ️ KOD 2'} - ${d.chief_complaint}
+        </div>
+        <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">📍 ${d.incident_address}, ${d.incident_city}</div>
+        <div style="color: var(--text-muted);">Informacje: ${d.dispatcher_notes || d.description || 'Brak dodatkowych uwag dyspozytora'}</div>
+      `;
+    }
+
+    function highlightStatusButton(statusNum) {
+      for (let i = 1; i <= 6; i++) {
+        const btn = document.getElementById(`btnSt${i}`);
+        if (btn) {
+          if (i === statusNum) {
+            btn.classList.add("active");
+          } else {
+            btn.classList.remove("active");
+          }
+        }
+      }
+    }
+
+    function sendTabletStatus(statusNum) {
+      const payload = {
+        unit_id: currentUnitID,
+        new_status: statusNum,
+        latitude: 52.2297 + (Math.random() - 0.5) * 0.02,
+        longitude: 21.0122 + (Math.random() - 0.5) * 0.02,
+        timestamp: new Date().toISOString()
+      };
+
+      const msg = {
+        type: "STATUS_UPDATE",
+        sender_role: "TABLET_ZRM",
+        sender_id: currentUnitID,
+        payload: payload,
+        timestamp: new Date().toISOString()
+      };
+
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(msg));
+        log(`Tablet ${currentUnitID} przesłał status: ${statusNames[statusNum]}`);
+      } else {
+        log(`[OFFLINE] Brak łączności z serwerem! Status ${statusNum} zbuforowany lokalnie.`);
+      }
+      highlightStatusButton(statusNum);
+    }
+
+    async function submitDispatch() {
+      const priority = document.getElementById("priority").value;
+      const assignedUnit = document.getElementById("assignUnit").value;
+      const chiefComplaint = document.getElementById("chiefComplaint").value;
+      const incidentAddress = document.getElementById("incidentAddress").value;
+      const incidentCity = document.getElementById("incidentCity").value;
+      const patientInfo = document.getElementById("patientInfo").value;
+
+      const body = {
+        priority: priority,
+        assigned_unit_id: assignedUnit,
+        chief_complaint: chiefComplaint,
+        incident_address: incidentAddress,
+        incident_city: incidentCity,
+        description: patientInfo,
+        latitude: 52.23 + (Math.random() - 0.5) * 0.04,
+        longitude: 21.01 + (Math.random() - 0.5) * 0.04
+      };
+
+      try {
+        const res = await fetch("/api/v1/dispatches", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        const created = await res.json();
+        log(`Pomyślnie utworzono i zadysponowano KZW: ${created.id} ➔ ${assignedUnit}`);
+        document.getElementById("chiefComplaint").value = "";
+        document.getElementById("incidentAddress").value = "";
+      } catch (err) {
+        log(`Błąd zapisu KZW: ${err}`);
+      }
+    }
+
+    function saveTabletKMCR() {
+      const unit = unitsData[currentUnitID];
+      const dispatchID = unit ? unit.current_dispatch_id : "KZW-MANUAL";
+      
+      const kmcrData = {
+        id: "KMCR-" + Date.now(),
+        dispatch_id: dispatchID || "KZW-DEMO",
+        unit_id: currentUnitID,
+        vital_signs_history: [{
+          heart_rate: parseInt(document.getElementById("vHR").value) || 80,
+          systolic_bp: 130,
+          diastolic_bp: 85,
+          spo2: parseInt(document.getElementById("vSpO2").value) || 98,
+          gcs_score: parseInt(document.getElementById("vGCS").value) || 15,
+          measured_at: new Date().toISOString()
+        }],
+        sample_s: "Ból w klatce piersiowej",
+        sample_a: "Brak znanych alergii",
+        sample_m: "Aspiryna, Bisocard",
+        is_finalized: false
+      };
+
+      const msg = {
+        type: "KMCR_UPDATE",
+        sender_role: "TABLET_ZRM",
+        sender_id: currentUnitID,
+        payload: kmcrData,
+        timestamp: new Date().toISOString()
+      };
+
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(msg));
+        log(`Parametry KMCR wysłane z tabletu ${currentUnitID} i zsynchronizowane.`);
+      }
+    }
+
+    // Zegar
+    setInterval(() => {
+      document.getElementById("liveClock").textContent = new Date().toLocaleTimeString();
+    }, 1000);
+
+    // Start WebSocket
+    initWebSocket();
+  </script>
+</body>
+</html>
